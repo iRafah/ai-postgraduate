@@ -8,8 +8,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import CountVectorizer
 from wordcloud import WordCloud
-
-
+from nltk import tokenize
+from string import punctuation
 
 # Função para treinar o modelo de classificação de sentimentos
 def treinar_modelo(dados, coluna_texto, coluna_sentimento):
@@ -174,4 +174,52 @@ def grafico(dados, coluna_texto, quantidade):
     ax.set(ylabel="Contagem")
     plt.show()
 
-grafico(avaliacoes, 'review_text', 30)
+# grafico(avaliacoes, 'review_text', 30)
+
+# Remoção de Stop Words
+palavras_irrelevantes = nltk.corpus.stopwords.words('portuguese')
+# print(palavras_irrelevantes)
+
+frase_processada = list()
+for avaliacao in avaliacoes.review_text:
+    nova_frase = list()
+    palavras_texto = token_por_espaco.tokenize(avaliacao)
+    for palavra in palavras_texto:
+        if palavra not in palavras_irrelevantes:
+            nova_frase.append(palavra)
+    frase_processada.append(' '.join(nova_frase))
+
+avaliacoes['texto_sem_stop_words'] = frase_processada
+
+print(avaliacoes.head())
+
+# Verificar modelo apenas com o texto sem stop words.
+print(treinar_modelo(avaliacoes, 'texto_sem_stop_words', 'polarity'))
+
+# grafico(avaliacoes, 'texto_sem_stop_words', 10)
+
+frase = 'Muito bom, este produto.'
+token_pontuacao = tokenize.WordPunctTokenizer()
+token_frase = token_pontuacao.tokenize(frase)
+print(token_frase)
+
+pontuacao = list()
+for ponto in punctuation:
+    pontuacao.append(ponto)
+
+pontuacao_stopwords = pontuacao + palavras_irrelevantes
+
+frase_processada = list()
+for avaliacao in avaliacoes.texto_sem_stop_words:
+    nova_frase = list()
+    palavras_texto = token_pontuacao.tokenize(avaliacao)
+    for palavra in palavras_texto:
+        if palavra not in pontuacao_stopwords:
+            nova_frase.append(palavra)
+    frase_processada.append(' '.join(nova_frase))
+
+avaliacoes['texto_sem_stopwords_e_pontuacao'] = frase_processada
+
+print(avaliacoes.head())
+
+grafico(avaliacoes, 'texto_sem_stopwords_e_pontuacao', 20)
