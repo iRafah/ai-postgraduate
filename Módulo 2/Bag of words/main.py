@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import nltk
 import seaborn as sns
+import unidecode
 
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
@@ -10,6 +11,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from wordcloud import WordCloud
 from nltk import tokenize
 from string import punctuation
+
 
 # Função para treinar o modelo de classificação de sentimentos
 def treinar_modelo(dados, coluna_texto, coluna_sentimento):
@@ -91,7 +93,7 @@ def word_cloud_neg(dados, coluna_texto):
     plt.figure(figsize=(10, 7))
     plt.imshow(nuvem_palavras, interpolation='bilinear')
     plt.axis('off')
-    # plt.show()
+    plt.show()
 
 
 # Função para criar uma Word Cloud de avaliações positivas
@@ -121,7 +123,7 @@ def word_cloud_pos(dados, coluna_texto):
     plt.figure(figsize=(10, 7))
     plt.imshow(nuvem_palavras, interpolation='bilinear')
     plt.axis('off')
-    # plt.show()
+    plt.show()
 
 
 # Gerar Word Cloud para avaliações negativas
@@ -130,13 +132,11 @@ word_cloud_neg(avaliacoes, 'review_text')
 # Gerar Word Cloud para avaliações positivas
 word_cloud_pos(avaliacoes, 'review_text')
 
-# nltk.download('all')
+nltk.download('stopwords')
 
 # corpus = ['Muito bom esse produto', 'Muito ruim esse produto']
 # frequencia = nltk.FreqDist(corpus)
 # print(frequencia)
-
-from nltk import tokenize
 
 frase = 'Muito bom esse produto'
 token_por_espaco = tokenize.WhitespaceTokenizer()
@@ -222,4 +222,50 @@ avaliacoes['texto_sem_stopwords_e_pontuacao'] = frase_processada
 
 print(avaliacoes.head())
 
-grafico(avaliacoes, 'texto_sem_stopwords_e_pontuacao', 20)
+# grafico(avaliacoes, 'texto_sem_stopwords_e_pontuacao', 20)
+
+# Retirar acentos.
+sem_acentos = [unidecode.unidecode(texto) for texto in avaliacoes.texto_sem_stopwords_e_pontuacao]
+
+print(sem_acentos[4])
+
+stopwords_sem_acento = [unidecode.unidecode(texto) for texto in pontuacao_stopwords]
+
+avaliacoes['texto_sem_stopwords_e_pontuacao_e_acentos'] = sem_acentos
+
+frase_processada = list()
+for avaliacao in avaliacoes.texto_sem_stopwords_e_pontuacao_e_acentos:
+    nova_frase = list()
+    palavras_texto = token_pontuacao.tokenize(avaliacao)
+    for palavra in palavras_texto:
+        if palavra not in stopwords_sem_acento:
+            nova_frase.append(palavra)
+    frase_processada.append(' '.join(nova_frase))
+
+avaliacoes['texto_sem_stopwords_e_pontuacao_e_acentos'] = frase_processada
+
+print(avaliacoes.head())
+
+# Treinar modelo novamente
+print(treinar_modelo(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos', 'polarity'))
+
+word_cloud_neg(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos')
+word_cloud_pos(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos')
+
+frase_processada = list()
+for avaliacao in avaliacoes.texto_sem_stopwords_e_pontuacao_e_acentos:
+    nova_frase = list()
+    avaliacao = avaliacao.lower()
+    palavras_texto = token_pontuacao.tokenize(avaliacao)
+    for palavra in palavras_texto:
+        if palavra not in stopwords_sem_acento:
+            nova_frase.append(palavra)
+    frase_processada.append(' '.join(nova_frase))
+
+avaliacoes['texto_sem_stopwords_e_pontuacao_e_acentos_minusculos'] = frase_processada
+
+print(avaliacoes.head())
+
+grafico(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos', 10)
+word_cloud_neg(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos')
+word_cloud_pos(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos')
