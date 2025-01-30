@@ -1,10 +1,15 @@
 # Importação de bibliotecas necessárias
 import pandas as pd
+import matplotlib.pyplot as plt
+import nltk
+import seaborn as sns
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import CountVectorizer
 from wordcloud import WordCloud
-import matplotlib.pyplot as plt
+
+
 
 # Função para treinar o modelo de classificação de sentimentos
 def treinar_modelo(dados, coluna_texto, coluna_sentimento):
@@ -86,7 +91,7 @@ def word_cloud_neg(dados, coluna_texto):
     plt.figure(figsize=(10, 7))
     plt.imshow(nuvem_palavras, interpolation='bilinear')
     plt.axis('off')
-    plt.show()
+    # plt.show()
 
 
 # Função para criar uma Word Cloud de avaliações positivas
@@ -116,7 +121,7 @@ def word_cloud_pos(dados, coluna_texto):
     plt.figure(figsize=(10, 7))
     plt.imshow(nuvem_palavras, interpolation='bilinear')
     plt.axis('off')
-    plt.show()
+    # plt.show()
 
 
 # Gerar Word Cloud para avaliações negativas
@@ -124,3 +129,49 @@ word_cloud_neg(avaliacoes, 'review_text')
 
 # Gerar Word Cloud para avaliações positivas
 word_cloud_pos(avaliacoes, 'review_text')
+
+# nltk.download('all')
+
+# corpus = ['Muito bom esse produto', 'Muito ruim esse produto']
+# frequencia = nltk.FreqDist(corpus)
+# print(frequencia)
+
+from nltk import tokenize
+
+frase = 'Muito bom esse produto'
+token_por_espaco = tokenize.WhitespaceTokenizer()
+token_frase = token_por_espaco.tokenize(frase)
+print(token_frase)
+
+todas_avaliacoes = [texto for texto in avaliacoes.review_text]
+todas_palavras = ' '.join(todas_avaliacoes)
+
+token_dataset = token_por_espaco.tokenize(todas_palavras)
+frequencia = nltk.FreqDist(token_dataset)
+
+# print(frequencia)
+
+dataframe_frequencia = pd.DataFrame({"Palavra": list(frequencia.keys()), "Frequência": list(frequencia.values())})
+print(dataframe_frequencia.head())
+
+# As 10 palavras que mais aparecem.
+print(dataframe_frequencia.nlargest(columns="Frequência", n=10))
+
+def grafico(dados, coluna_texto, quantidade):
+    todas_palavras = ' '.join([texto for texto in dados[coluna_texto]])
+    token_frase = token_por_espaco.tokenize(todas_palavras)
+    frequencia = nltk.FreqDist(token_frase)
+
+    dataframe_frequencia = pd.DataFrame({"Palavra": list(frequencia.keys()), 
+                                         "Frequência": list(frequencia.values())})
+    
+    dataframe_frequencia = dataframe_frequencia.nlargest(columns="Frequência", n=quantidade)
+
+    plt.figure(figsize=(12, 8))
+    ax = sns.barplot(dataframe_frequencia, 
+                 x="Palavra", y="Frequência", color="lightblue")
+
+    ax.set(ylabel="Contagem")
+    plt.show()
+
+grafico(avaliacoes, 'review_text', 30)
