@@ -132,7 +132,7 @@ word_cloud_neg(avaliacoes, 'review_text')
 # Gerar Word Cloud para avaliações positivas
 word_cloud_pos(avaliacoes, 'review_text')
 
-nltk.download('stopwords')
+# nltk.download('all')
 
 # corpus = ['Muito bom esse produto', 'Muito ruim esse produto']
 # frequencia = nltk.FreqDist(corpus)
@@ -266,6 +266,29 @@ avaliacoes['texto_sem_stopwords_e_pontuacao_e_acentos_minusculos'] = frase_proce
 
 print(avaliacoes.head())
 
-grafico(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos', 10)
-word_cloud_neg(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos')
-word_cloud_pos(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos')
+# grafico(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos', 10)
+# word_cloud_neg(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos')
+# word_cloud_pos(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos')
+
+# Stemming RSLP
+stemmer = nltk.RSLPStemmer()
+
+frase_processada = list()
+for avaliacao in avaliacoes.texto_sem_stopwords_e_pontuacao_e_acentos:
+    nova_frase = list()
+    avaliacao = avaliacao.lower()
+    palavras_texto = token_pontuacao.tokenize(avaliacao)
+    for palavra in palavras_texto:
+        if palavra not in stopwords_sem_acento:
+            nova_frase.append(stemmer.stem(palavra))
+    frase_processada.append(' '.join(nova_frase))
+
+avaliacoes['texto_stemmizado'] = frase_processada
+print(avaliacoes.head())
+
+# Comparar modelos.
+print(treinar_modelo(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos', 'polarity'))
+print(treinar_modelo(avaliacoes, 'texto_stemmizado', 'polarity'))
+
+word_cloud_neg(avaliacoes, 'texto_stemmizado')
+word_cloud_pos(avaliacoes, 'texto_stemmizado')
