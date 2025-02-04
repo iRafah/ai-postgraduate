@@ -8,8 +8,10 @@ import unidecode
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from wordcloud import WordCloud
 from nltk import tokenize
+from nltk import ngrams
 from string import punctuation
 
 
@@ -132,7 +134,7 @@ word_cloud_neg(avaliacoes, 'review_text')
 # Gerar Word Cloud para avaliações positivas
 word_cloud_pos(avaliacoes, 'review_text')
 
-nltk.download('stopwords')
+# nltk.download('all')
 
 # corpus = ['Muito bom esse produto', 'Muito ruim esse produto']
 # frequencia = nltk.FreqDist(corpus)
@@ -266,6 +268,66 @@ avaliacoes['texto_sem_stopwords_e_pontuacao_e_acentos_minusculos'] = frase_proce
 
 print(avaliacoes.head())
 
-grafico(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos', 10)
-word_cloud_neg(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos')
-word_cloud_pos(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos')
+# grafico(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos', 10)
+# word_cloud_neg(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos')
+# word_cloud_pos(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos_minusculos')
+
+# Stemming RSLP
+stemmer = nltk.RSLPStemmer()
+
+frase_processada = list()
+for avaliacao in avaliacoes.texto_sem_stopwords_e_pontuacao_e_acentos:
+    nova_frase = list()
+    avaliacao = avaliacao.lower()
+    palavras_texto = token_pontuacao.tokenize(avaliacao)
+    for palavra in palavras_texto:
+        if palavra not in stopwords_sem_acento:
+            nova_frase.append(stemmer.stem(palavra))
+    frase_processada.append(' '.join(nova_frase))
+
+avaliacoes['texto_stemmizado'] = frase_processada
+print(avaliacoes.head())
+
+# Comparar modelos.
+print(treinar_modelo(avaliacoes, 'texto_sem_stopwords_e_pontuacao_e_acentos', 'polarity'))
+print(treinar_modelo(avaliacoes, 'texto_stemmizado', 'polarity'))
+
+word_cloud_neg(avaliacoes, 'texto_stemmizado')
+word_cloud_pos(avaliacoes, 'texto_stemmizado')
+
+# TF IDF
+tfidf = TfidfVectorizer(lowercase=False, max_features=100)
+tfidf_tratados = tfidf.fit_transform(avaliacoes.texto_stemmizado)
+
+treino, teste, classe_treino, classe_teste = train_test_split(tfidf_tratados, 
+                                                              avaliacoes.polarity,
+                                                              stratify=avaliacoes.polarity,
+                                                              random_state=71)
+regressao_logistica = LogisticRegression()
+regressao_logistica.fit(treino, classe_treino)
+
+acuracia_tfidf = regressao_logistica.score(teste, classe_teste)
+print(f'Acurácia TFIDF: ', acuracia_tfidf)
+
+# NGrams
+tfidf = TfidfVectorizer(lowercase=False, ngram_range=(1, 2))
+vetor_tfidf = tfidf.fit_transform(avaliacoes.texto_stemmizado)
+
+treino, teste, classe_treino, classe_teste = train_test_split(vetor_tfidf,
+                                                              avaliacoes.polarity,
+                                                              random_state=71
+                                                              )
+
+regressao_logistica = LogisticRegression(max_iter=200)
+regressao_logistica.fit(treino, classe_treino)
+acuracia_tfidf_ngrams = regressao_logistica.score(teste, classe_teste)
+print(f'Acurácia TFIDF Ngrams: ', acuracia_tfidf_ngrams)
+
+pesos = pd.DataFrame(
+    regressao_logistica.coef_[0].T,
+    index = tfidf.get_features_names_out()
+)
+
+print(pesos.nlargest(10, 0))
+
+print(pesos.nsmallest(10, 0))
