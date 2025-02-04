@@ -8,8 +8,10 @@ import unidecode
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from wordcloud import WordCloud
 from nltk import tokenize
+from nltk import ngrams
 from string import punctuation
 
 
@@ -292,3 +294,40 @@ print(treinar_modelo(avaliacoes, 'texto_stemmizado', 'polarity'))
 
 word_cloud_neg(avaliacoes, 'texto_stemmizado')
 word_cloud_pos(avaliacoes, 'texto_stemmizado')
+
+# TF IDF
+tfidf = TfidfVectorizer(lowercase=False, max_features=100)
+tfidf_tratados = tfidf.fit_transform(avaliacoes.texto_stemmizado)
+
+treino, teste, classe_treino, classe_teste = train_test_split(tfidf_tratados, 
+                                                              avaliacoes.polarity,
+                                                              stratify=avaliacoes.polarity,
+                                                              random_state=71)
+regressao_logistica = LogisticRegression()
+regressao_logistica.fit(treino, classe_treino)
+
+acuracia_tfidf = regressao_logistica.score(teste, classe_teste)
+print(f'Acurácia TFIDF: ', acuracia_tfidf)
+
+# NGrams
+tfidf = TfidfVectorizer(lowercase=False, ngram_range=(1, 2))
+vetor_tfidf = tfidf.fit_transform(avaliacoes.texto_stemmizado)
+
+treino, teste, classe_treino, classe_teste = train_test_split(vetor_tfidf,
+                                                              avaliacoes.polarity,
+                                                              random_state=71
+                                                              )
+
+regressao_logistica = LogisticRegression(max_iter=200)
+regressao_logistica.fit(treino, classe_treino)
+acuracia_tfidf_ngrams = regressao_logistica.score(teste, classe_teste)
+print(f'Acurácia TFIDF Ngrams: ', acuracia_tfidf_ngrams)
+
+pesos = pd.DataFrame(
+    regressao_logistica.coef_[0].T,
+    index = tfidf.get_features_names_out()
+)
+
+print(pesos.nlargest(10, 0))
+
+print(pesos.nsmallest(10, 0))
