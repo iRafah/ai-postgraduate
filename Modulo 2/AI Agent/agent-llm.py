@@ -11,7 +11,7 @@ import os
 
 load_dotenv()
 
-client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
+client = OpenAI(api_key=os.environ[''])
 
 #ativos = [“ITUB3.SA”, “VALE3.SA”, “PETR3.SA”, “^BVSP”]
 
