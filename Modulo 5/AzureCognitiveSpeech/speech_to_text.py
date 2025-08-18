@@ -4,6 +4,7 @@ from azure.cognitiveservices.speech import SpeechConfig, SpeechRecognizer, Audio
 
 load_dotenv()
 
+# Carregar variáveis de ambiente
 KEY = os.getenv("KEY")
 REGION = os.getenv("REGION")
 
